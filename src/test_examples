@@ -1,0 +1,57 @@
+#!/bin/bash
+
+function run() {
+    path="$1"
+    echo "Testing $path "
+    if [ $clean == yes ]; then
+        ./cx --clean "$path"
+    fi
+    out=$(./cx -q --keep-deps "$path")
+    #echo $out
+    if [ x"$out" != x"OK" ]; then 
+        echo FAIL
+        exit 1
+    fi
+}
+
+function expect_failure() {
+    path="$1"
+    echo "Testing $path "
+    if [ $clean == yes ]; then
+        ./cx --clean "$path"
+    fi
+    ./cx -q --keep-deps "$path" 2>/dev/null
+    if [ $? -eq 0 ]; then 
+        echo FAIL
+        exit 1
+    fi
+}
+
+function run_all() {
+    clean=$1
+    run examples/cpp_single_source
+    run examples/c_single_source
+    run examples/c_many_sources
+    run examples/cpp_multiunit/prog
+    run examples/cpp_multiunit_2/prog
+    run examples/cpp_weird_inc
+    run examples/c_math
+    run examples/c_socket
+    run examples/c_2_programs/main1.c
+    run examples/c_cpp_mix
+    run examples/cpp_threads
+    run examples/cpp_z
+    run examples/cpp_deep_1/progs/prog1.cpp
+
+    expect_failure examples/c_missing_header
+    expect_failure examples/invalid_opt_1
+    expect_failure examples/invalid_opt_2
+    expect_failure examples/invalid_opt_3
+    expect_failure examples/invalid_opt_4
+    expect_failure examples/invalid_opt_5
+}
+
+./cx --sanity
+run_all yes
+run_all no
+

@@ -1,0 +1,4 @@
+cc_options: -O3
+external_libs: -lz
+
+

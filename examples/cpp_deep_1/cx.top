@@ -1,0 +1,7 @@
+# gcc: /usr/bin/gcc-7
+# g++: /usr/bin/g++-7
+# ar: /usr/bin/gcc-ar-7
+# nm: /usr/bin/gcc-nm-7
+
+include_path: common/units
+
