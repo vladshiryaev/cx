@@ -65,10 +65,23 @@ A unit may use other units. The rule is simple: if unit A cludes something from 
 
 ### Include search path
 
+## unit configiration
+
 ... `cx.unit` ....
+```
+cc_options
+c_options
+cxx_options
+ld_options
+include_path
+external_libs
+```
+
 
 Example:
 ```
+cxx_options: -O0 -g
+
 ```
 
 ### Source tree top directory
@@ -77,4 +90,13 @@ Example:
 
 Example:
 ```
+gcc: /usr/bin/gcc-7
+g++: /usr/bin/g++-7
+ar: /usr/bin/gcc-ar-7
+nm: /usr/bin/gcc-nm-7
+
+include_path: common/parsing common/util
+
 ```
+## Limitations
+
