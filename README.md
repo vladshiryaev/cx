@@ -7,9 +7,9 @@ requires zero project configuration.
 
 ## Running
 
-`Usage: cx [OPTION]... [[NAME] [ARG]...]`
+`cx [OPTION]... [[NAME] [ARG]...]`
 
-Build and execute. If `NAME` is a directory, there must be exactly one source
+Build and execute `NAME`. If `NAME` is a directory, there must be exactly one source
 defining `main()` in that directory. If `NAME` is a .c/.cpp source, it must define
 `main()`. `OPTION`s before `NAME` are build options (see below). Everything after
 `NAME` is passed to the executed program verbatim.
