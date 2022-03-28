@@ -19,7 +19,7 @@ Examples:
 
 ```
 cx hello_world.cpp
-cx my_program_directory/  --my_arg -a -b -c
+cx path/my_program_directory/  --my_arg -a -b -c
 ```
 
 The program may contain multiple source files, in multiple directories. As long as you
@@ -45,11 +45,11 @@ Only things that have changed since last invocation will be be recompiled.
 ## Building
 
 In order to build `cx` just run `./build` script in the source directory. It's a one-liner bash script that
-will do a bootstrapping build of `cx` without help from `make` and such, and copy the
+will do a bootstrapping build of `cx` (without help from `make` and such), and copy the
 binary to `/usr/bin`.
 
 From now on you can build `cx` using `cx`. Just type `cx` in the source directory
-then move `.cx.cache/main.cpp.o.exe` to, e.g., `/usr/bin/cx`.
+then copy `.cx.cache/main.cpp.o.exe` to, e.g., `/usr/bin/cx`.
 
 ## Source structure
 
@@ -61,7 +61,7 @@ A unit is a flat directory containing a number of .c/.cpp/.h files.
 
 Units are always compiled and archived into libraries in the cache directory, except sources that contain `main()` function. Those are used only for running.
 
-A unit may use other units. The rule is simple: if unit A includes something from unit B, then A depens on B, which means B needs to be compiled and linked in whenever A is needed. Dpendency is transitive, so you don't have to explicitly specify sub-dependencies.
+A unit may use other units. The rule is simple: if unit A #includes something from unit B, then A depends on B, which means B needs to be compiled and linked in whenever A is needed. Unit dependencies are transitive, so you don't have to explicitly specify sub-dependencies.
 
 ### Include search path
 
@@ -107,7 +107,7 @@ ar: /usr/bin/gcc-ar-7
 nm: /usr/bin/gcc-nm-7
 
 ```
-Those are exact names by which compiler etc. will be invoked. Note, only GCC is currently supported, and whatever program is specified as e.g. `g++` must behave exactly as `g++` does.
+Those are exact names by which compiler etc. will be invoked. Note, only GCC is currently supported, and whatever program is specified as, e.g., `g++` must behave exactly as `g++` does.
 
 ## Limitations
 
