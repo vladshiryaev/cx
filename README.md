@@ -69,20 +69,20 @@ Unit A may include headers from unit B relative to the common path of A and B.
 
 E.g. `src/foo/a/something.cpp` may include `src/foo/b/header.h` as `#include "b/header.h"`. In other words, you can drop leading `../` path elements. This should not require any configuration. Alternatively, you can use `include_path` in `cx.unit` or `cx.top`.
 
-## unit configiration
+### Unit configiration
 
 Optionally, there may be file called `cx.unit` in unit's directory. It may contain something like this:
 
 ```
-cc_options: -O0 -g -DFOO=BAR
+cc_options: -O0 -g -Dfoo=bar
 c_options: -std=c18
 cxx_options: -std=c++17 -faligned-new
 ld_options:
 external_libs: -lz -L/home/jsmith/shelf_libs/
-include_path: ../../common/util ../../common/funcs/
+include_path: submodules ../../common/util ../../common/funcs/
 
 ```
-The values are in about the same format you would specify them in GCC's command line.
+The values are in about the same format you would specify args in GCC's command line.
 
 | Parameter     | Meaning |
 |---------------|---------|
@@ -90,25 +90,24 @@ The values are in about the same format you would specify them in GCC's command 
 |`c_options`    | C only |
 |`cxx_options`  | C++ only |
 |`ld_options`   | Linker (note, invoked as gcc or g++) |
-|`external_libs`| Goes to the end of linker command line. May contain exact library pathe, `-L<dir>`, `-l<id>`. Note, these libraries are not checked for changes |
-|`include_path` | |
+|`external_libs`| Goes to the end of linker command line. May contain a mix of exact library paths, `-L<dir>`, `-l<id>`. Note, these libraries are not checked for changes. |
+|`include_path` | List of include paths. Relative paths are relative to the directory in which this configuration file is located. |
 
-Note: You probably should not use `cx.unit` in unit directory, and instead put them in `cx.top`.
+Note: You probably should not use `cx.unit` in unit directory, and put most of the parameters in `cx.top` instead.
 
 
 ### Source tree top directory
 
-... `cx.top` ....
+You may put a file named `cx.top` at the top of your source tree. It may contain the same parameters as `cx.unit` (and most of them should probably be here instead of `cx.unit`). Besides, it may contain something like this:
 
-Example:
 ```
 gcc: /usr/bin/gcc-7
 g++: /usr/bin/g++-7
 ar: /usr/bin/gcc-ar-7
 nm: /usr/bin/gcc-nm-7
 
-include_path: common/parsing common/util
-
 ```
+Those are exact names by which compiler etc. will be invoked. Note, only GCC is currently supported, and whatever program is specified as e.g. `g++` must behave exactly as `g++` does.
+
 ## Limitations
 
