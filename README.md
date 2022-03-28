@@ -61,28 +61,40 @@ A unit is a flat directory containing a number of .c/.cpp/.h files.
 
 Units are always compiled and archived into libraries in the cache directory, except sources that contain `main()` function. Those are used only for running.
 
-A unit may use other units. The rule is simple: if unit A cludes something from unit B, then A depens on B, which means B needs to be compiled and linked in whenever a program needs A. Dpendency is transitive.
+A unit may use other units. The rule is simple: if unit A includes something from unit B, then A depens on B, which means B needs to be compiled and linked in whenever A is needed. Dpendency is transitive, so you don't have to explicitly specify sub-dependencies.
 
 ### Include search path
 
+Unit A may include headers from unit B relative to the common path of A and B.
+
+E.g. `src/foo/a/something.cpp` may include `src/foo/b/header.h` as `#include "b/header.h"`. In other words, you can drop leading `../` path elements. This should not require any configuration. Alternatively, you can use `include_path` in `cx.unit` or `cx.top`.
+
 ## unit configiration
 
-... `cx.unit` ....
-```
-cc_options
-c_options
-cxx_options
-ld_options
-include_path
-external_libs
-```
-
-
-Example:
-```
-cxx_options: -O0 -g
+Optionally, there may be file called `cx.unit` in unit's directory. It may contain something like this:
 
 ```
+cc_options: -O0 -g -DFOO=BAR
+c_options: -std=c18
+cxx_options: -std=c++17 -faligned-new
+ld_options:
+external_libs: -lz -L/home/jsmith/shelf_libs/
+include_path: ../../common/util ../../common/funcs/
+
+```
+The values are in about the same format you would specify them in GCC's command line.
+
+| Parameter     | Meaning |
+|---------------|---------|
+|`cc_options`   | Common to C and C++ |
+|`c_options`    | C only |
+|`cxx_options`  | C++ only |
+|`ld_options`   | Linker (note, invoked as gcc or g++) |
+|`external_libs`| Goes to the end of linker command line. May contain exact library pathe, `-L<dir>`, `-l<id>`. Note, these libraries are not checked for changes |
+|`include_path` | |
+
+Note: You probably should not use `cx.unit` in unit directory, and instead put them in `cx.top`.
+
 
 ### Source tree top directory
 
