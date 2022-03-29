@@ -10,6 +10,7 @@
 #include "output.h"
 #include "dirs.h"
 #include "lists.h"
+#include "compiler.h"
 #include "config.h"
 #include "async.h"
 
@@ -210,6 +211,23 @@ void testFileStateDict() {
 }
 
 
+void testFileType() {
+    assert(getFileType("x.c") == typeCSource);
+    assert(getFileType("x.cc") == typeCppSource);
+    assert(getFileType("x.cp") == typeCppSource);
+    assert(getFileType("x.cpp") == typeCppSource);
+    assert(getFileType("x.cxx") == typeCppSource);
+    assert(getFileType("x.c++") == typeCppSource);
+    assert(getFileType("x.CPP") == typeCppSource);
+    assert(getFileType("x.C") == typeCppSource);
+    assert(getFileType("x.h") == typeHeader);
+    assert(getFileType("x.H") == typeHeader);
+    assert(getFileType("x.hxx") == typeHeader);
+    assert(getFileType("x.hpp") == typeHeader);
+    assert(getFileType("x.h++") == typeHeader);
+}
+
+
 void testConfig() {
     const char* text = 
         "# Comment\n"
@@ -275,6 +293,7 @@ void test() {
     RUN(testStringList);
     RUN(testFileStateList);
     RUN(testFileStateDict);
+    RUN(testFileType);
     RUN(testConfig);
     RUN(testBatch);
 }

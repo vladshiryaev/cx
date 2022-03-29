@@ -14,15 +14,28 @@ FileType getFileType(const char* path) {
         int extLength = strlen(ext);
         switch (extLength) {
             case 2:
-                if (ext[1] == 'c') {
-                    return typeCSource;
-                }
-                else if (ext[1] == 'h') {
-                    return typeHeader;
+                switch (ext[1]) {
+                    case 'c': return typeCSource;
+                    case 'C': return typeCppSource;
+                    case 'h':
+                    case 'H': return typeHeader;
                 }
                 break;
+            case 3:
+                switch (ext[1]) {
+                    case 'c':
+                        if (ext[2] == 'c' || ext[2] == 'p') {
+                            return typeCppSource;
+                        }
+                        break;
+                }
             case 4:
                 switch (ext[1]) {
+                    case 'C':
+                        if (ext[2] == 'P' && ext[3] == 'P') {
+                            return typeCppSource;
+                        }
+                        break;
                     case 'c':
                         if (
                             (ext[2] == 'p' && ext[3] == 'p') ||
@@ -36,6 +49,15 @@ FileType getFileType(const char* path) {
                         if (
                             (ext[2] == 'p' && ext[3] == 'p') ||
                             (ext[2] == 'x' && ext[3] == 'x') ||
+                            (ext[2] == '+' && ext[3] == '+')
+                        ) {
+                            return typeHeader;
+                        }
+                        break;
+                    case 'H':
+                        if (
+                            (ext[2] == 'P' && ext[3] == 'P') ||
+                            (ext[2] == 'X' && ext[3] == 'X') ||
                             (ext[2] == '+' && ext[3] == '+')
                         ) {
                             return typeCppSource;
