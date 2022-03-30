@@ -231,17 +231,33 @@ void testFileType() {
 void testConfig() {
     const char* text = 
         "# Comment\n"
-        "external_libs : \\\n"
-        "a \"b c\"\\\n"
-        " c\\ d \n"
+        "c_options:-O2 -Df=\" \" \\\n-O3\n"  // Escaped end of line, so continues.
+        "cxx_options: \"-Df= \" -Df='\" \"'  -Df=\"' '\"#Tail comment\n"
+        "external_libs : a \"b c\" c\\ d \n"  // Escaped space in 'c d'.
         "#";
     Config config;
     assert(config.parse("config", text));
-    StringList::Iterator i(config.externalLibs);
-    assert(i); assert(strcmp(i->data, "a") == 0); i.next();
-    assert(i); assert(strcmp(i->data, "b c") == 0); i.next();
-    assert(i); assert(strcmp(i->data, "c d") == 0); i.next();
-    assert(!i);
+    {
+        StringList::Iterator i(config.compilerCOptions);
+        assert(i); assert(strcmp(i->data, "-O2") == 0); i.next();
+        assert(i); assert(strcmp(i->data, "-Df= ") == 0); i.next();
+        assert(i); assert(strcmp(i->data, "-O3") == 0); i.next();
+        assert(!i);
+    }
+    {
+        StringList::Iterator i(config.compilerCppOptions);
+        assert(i); assert(strcmp(i->data, "-Df= ") == 0); i.next();
+        assert(i); assert(strcmp(i->data, "-Df=\" \"") == 0); i.next();
+        assert(i); assert(strcmp(i->data, "-Df=' '") == 0); i.next();
+        assert(!i);
+    }
+    {
+        StringList::Iterator i(config.externalLibs);
+        assert(i); assert(strcmp(i->data, "a") == 0); i.next();
+        assert(i); assert(strcmp(i->data, "b c") == 0); i.next();
+        assert(i); assert(strcmp(i->data, "c d") == 0); i.next();
+        assert(!i);
+    }
 }
 
 

@@ -90,10 +90,10 @@ The values are in about the same format you would specify args in GCC's command 
 |`c_options`    | C only |
 |`cxx_options`  | C++ only |
 |`ld_options`   | Linker (note, invoked as gcc or g++) |
-|`external_libs`| Goes to the end of linker command line. May contain a mix of exact library paths, `-L<dir>`, `-l<id>`. Note, these libraries are not checked for changes. |
-|`include_path` | List of include paths. Relative paths are relative to the directory in which this configuration file is located. |
+|`external_libs`| Goes to the end of linker command line. May contain a mix of exact library/object paths, `-L<dir>`, `-l<id>`. Note, these libraries are not checked for changes, but dependency on them is transitive (if unit B needs them, then unit A using unit B also needs them). |
+|`include_path` | List of include paths. Relative paths are are interpreted as relative to the directory in which this configuration file is located. |
 
-Note: You probably should not use `cx.unit` in unit directory, and put most of the parameters in `cx.top` instead.
+Note: You probably should not use `cx.unit` in unit directory, and put most of common parameters in `cx.top` instead.
 
 
 ### Source tree top directory

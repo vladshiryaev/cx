@@ -29,7 +29,8 @@ void Profile::init() {
 }
 
 
-inline const char* skipSpaces(const char* p, int& line) {
+inline bool parseSpaces(const char*& p, int& line) {
+    const char* start = p;
     for (;;) {
         if (*p == ' ' || *p == '\t') {
             p++;
@@ -39,10 +40,8 @@ inline const char* skipSpaces(const char* p, int& line) {
             if (*p == '\r') {
                 p++;
                 if (*p == '\n') {
+                    p++;
                     line++;
-                }
-                else {
-                    return p - 2;
                 }
             }
             else if (*p == '\n') {
@@ -50,115 +49,111 @@ inline const char* skipSpaces(const char* p, int& line) {
                 line++;
             }
             else {
-                return p - 1;
+                p--;
+                break;
             }
         }
         else {
             break;
         }
     }
-    return p;
+    return p != start;
 }
 
 
-inline const char* skipLine(const char* p) {
-    for (; *p; p++) {
-        if (*p == '\n') {
-            return ++p;
-        }
-    }
-    return p;
-}
-
-
-static bool parseColon(const char* path, int& line, const char*& p) {
-    p = skipSpaces(p, line);
-    if (*p == ':') {
-        p++;
-    }
-    else {
-        FAILURE("%s:%d: Expected :", path, line);
-        return false;
-    }
-    p = skipSpaces(p, line);
-    return true;
-}
-
-
-static bool parseItem(const char* path, int line, const char*& p, char* out, int& len) {
+static bool parseItem(const char* path, int line, const char*& p, char* out, int& len, bool& error) {
+    error = false;
+    char quote = 0;
     char* o = out;
     for (;;) {
-        switch (*p) {
-            case '#':
+        if ((unsigned char)(*p) < 32) {
+            if (quote) {
+                error = true;
+                FAILURE("%s:%d: Closing %c expected", path, line, quote);
                 return false;
-            case '"':
-                p++;
-                for (;;) {
-                    char c = *p++;
-                    if (c == '"') {
-                        len = o - out;
-                        *o = 0;
-                        return true;
-                    }
-                    if (c == '\\') {
-                        c = *p++;
-                    }
-                    if ((unsigned char)(c) < 32) {
-                        --p;
-                        FAILURE("%s:%d: Expected closing \"", path, line, c);
-                        return false;
-                    }
-                    if (o - out >= maxPath) {
-                        FAILURE("%s:%d: String is too long", path, line);
-                        return false;
-                    }
-                    *o++ = c;
+            }
+            break;
+        }
+        else if (*p == '\\') {
+            p++;
+            if ((unsigned char)(*p) < 32) {
+                --p;
+                if (quote) {
+                    error = true;
+                    FAILURE("%s:%d: Closing %c expected", path, line, quote);
+
                 }
+                return false;
+            }
+        }
+        else if (*p == quote) {
+           p++;
+           quote = 0;
+           continue;
+        }
+        else if (*p == '"' || *p == '\'') {
+            if (quote) {
+                goto store;
+            }
+            else {
+                quote = *p++;
+            }
+            continue;
+        }
+        else if (*p == '\'') {
+            p++;
+            quote = '\'';
+            continue;
+        }
+        else if (*p == ' ' || *p == '\t' || *p == '#') {
+            if (!quote) {
                 break;
-            case '\'':
-                p++;
-                for (;;) {
-                    char c = *p++;
-                    if (c == '\'') {
-                        len = o - out;
-                        *o = 0;
-                        return true;
-                    }
-                    if (c == '\\') {
-                        c = *p++;
-                    }
-                    if ((unsigned char)(c) < 32) {
-                        --p;
-                        FAILURE("%s:%d: Expected closing \"", path, line, c);
-                        return false;
-                    }
-                    if (o - out >= maxPath) {
-                        FAILURE("%s:%d: String is too long", path, line);
-                        return false;
-                    }
-                    *o++ = c;
-                }
-                break;
-            default:
-                while ((unsigned char)(*p) > 32 && *p != '#') {
-                    if (*p == '\\') {
-                        p++;
-                        if ((unsigned char)(*p) < 32) {
-                            --p;
-                            return false;
-                        }
-                    }
-                    if (o - out >= maxPath) {
-                        FAILURE("%s:%d: String is too long", path, line);
-                        return false;
-                    }
-                    *o++ = *p++;
-                }
-                len = o - out;
-                *o = 0;
-                return len > 0;
+            }
+        }
+    store:
+        if (o - out >= maxPath) {
+            error = true;
+            FAILURE("%s:%d: String is too long", path, line);
+            return false;
+        }
+        *o++ = *p++;
+    }
+    len = o - out;
+    *o = 0;
+    return len > 0;
+}
+
+
+static void skipRestOfLine(const char*& p, int& line) {
+    for (; *p; p++) {
+        if (*p == '\n') {
+            p++;
+            line++;
+            break;
         }
     }
+}
+
+
+static bool parseEndOfLine(const char*& p, int& line) {
+    if (*p == '#') {
+        skipRestOfLine(p, line);
+        return true;
+    }
+    else if (*p == '\n') {
+        p++;
+        line++;
+        return true;
+    }
+    else if (*p == '\r') {
+        p++;
+        if (*p == '\n') {
+            p++;
+            line++;
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -174,23 +169,40 @@ static bool parseId(const char*& p, const char* id, int idLen) {
 }
 
 
+static bool parseColon(const char* path, int& line, const char*& p) {
+    parseSpaces(p, line);
+    if (*p == ':') {
+        p++;
+    }
+    else {
+        FAILURE("%s:%d: Expected :", path, line);
+        return false;
+    }
+    parseSpaces(p, line);
+    return true;
+}
+
+
 static bool parseList(const char* path, int& line, const char*& p, StringList& list) {
     if (!parseColon(path, line, p)) {
         return false;
     }
     char item[maxPath];
     int length;
-    while (parseItem(path, line, p, item, length)) {
-        //say("item %s (%d)\n", item, length);
+    bool error;
+    while (parseItem(path, line, p, item, length, error)) {
         list.add(item, length);
-        p = skipSpaces(p, line);
+        if (!parseSpaces(p, line)) {
+            break;
+        }
     }
-    return true;
+    return !error && parseEndOfLine(p, line);
 }
 
 
 static bool parseValue(const char* path, int& line, const char*& p, char* value, int& length) {
-    return parseColon(path, line, p) && parseItem(path, line, p, value, length);
+    bool error;
+    return parseColon(path, line, p) && (parseItem(path, line, p, value, length, error) || !error) && parseEndOfLine(p, line);
 }
 
 
@@ -218,11 +230,10 @@ bool Config::parse(const char* path, const char* text) {
                 goto done;
             case ' ':
             case '\t':
-                p = skipSpaces(++p, line);
+                parseSpaces(p, line);
                 break;
             case '#':
-                p = skipLine(++p);
-                line++;
+                skipRestOfLine(p, line);
                 break;
             case '\r':
                 p++;

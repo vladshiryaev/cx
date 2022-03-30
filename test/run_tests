@@ -3,10 +3,7 @@
 function run() {
     path="$1"
     echo "Testing $path "
-    if [ $clean == yes ]; then
-        cx --clean "$path"
-    fi
-    out=$(cx -q --keep-deps "$path")
+    out=$(cx -q "$path")
     #echo $out
     if [ x"$out" != x"OK" ]; then 
         echo FAIL
@@ -17,10 +14,7 @@ function run() {
 function expect_failure() {
     path="$1"
     echo "Testing $path "
-    if [ $clean == yes ]; then
-        cx --clean "$path"
-    fi
-    cx -q --keep-deps "$path" 2>/dev/null
+    cx -q "$path" 2>/dev/null
     if [ $? -eq 0 ]; then 
         echo FAIL
         exit 1
@@ -28,7 +22,6 @@ function expect_failure() {
 }
 
 function run_all() {
-    clean=$1
     run cpp_single_source
     run c_single_source
     run c_many_sources
@@ -42,6 +35,8 @@ function run_all() {
     run cpp_threads
     run cpp_z
     run cpp_deep_1/progs/prog1.cpp
+    run c_def
+    run cpp_def
 
     expect_failure c_missing_header
     expect_failure invalid_opt_1
@@ -52,8 +47,19 @@ function run_all() {
 }
 
 #./build
+
+if [ -z `which cx` ]; then
+    echo No 'cx' on PATH
+    exit 1
+fi
+
+# Internal tests.
 cx --sanity
 
-run_all yes
-run_all no
+# In clean state.
+cx --clean .
+run_all
+
+# Again, in fresh state.
+run_all
 

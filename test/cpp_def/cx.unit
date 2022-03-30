@@ -1,0 +1,2 @@
+# C++ only, not defined for C
+cxx_options              :         -DFLAG=1#Comment
