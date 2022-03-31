@@ -78,7 +78,7 @@ cc_options: -O0 -g -Dfoo=bar
 c_options: -std=c18
 cxx_options: -std=c++17 -faligned-new
 ld_options:
-external_libs: -lz -L/home/jsmith/shelf_libs/
+external_libs: -lz -L/home/jsmith/shelf_libs/ -lfoo -lbar /home/jsmith/other_libs/libxxx.a
 include_path: submodules ../../common/util ../../common/funcs/
 
 ```
