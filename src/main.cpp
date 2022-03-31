@@ -43,6 +43,8 @@ void printHelp() {
     printf("--clean\n");
     printf("    Clean build state (delete artifacts directories) recursively, starting\n");
     printf("    with the specied directory (or current directory, if omitted).\n");
+    printf("--color=auto|never|always\n");
+    printf("    Enable color. By default auto, meaning enabled if stderr is a terminal.\n");
     printf("-q, --quiet\n");
     printf("    Print nothing but errors.\n");
     printf("--verbose\n");
@@ -97,6 +99,21 @@ void parseOptions(const char* args[]) {
                      if (strcmp(opt, "clean") == 0) {
                          clean = true;
                          ok = true;
+                     }
+                     else if (strncmp(opt, "color=", 6) == 0) {
+                          if (strcmp(opt + 6, "always") == 0) {
+                              setColor(colorAlways);
+                          }
+                          else if (strcmp(opt + 6, "never") == 0) {
+                              setColor(colorNever);
+                          }
+                          else if (strcmp(opt + 6, "auto") == 0) {
+                              setColor(colorAuto);
+                          }
+                          else {
+                              PANIC("Expected: --color=always|never|auto");
+                          }
+                          ok = true;
                      }
                      break;
                  case 'f':

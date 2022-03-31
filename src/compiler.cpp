@@ -231,6 +231,11 @@ static bool isValidGccOption(const char* opt, int len) {
 }
 
 
+static const char* colorOption() {
+    return colorEnabled ? "-fdiagnostics-color=always" : "-fdiagnostics-color=never";
+}
+
+
 bool GccCompiler::compile(const Config& config, const char* sourcePath, Dependencies& deps) {
     char absSourcePath[maxPath];
     INFO("%s", rebasePath(config.path, sourcePath, absSourcePath));
@@ -244,7 +249,7 @@ bool GccCompiler::compile(const Config& config, const char* sourcePath, Dependen
     runner.currentDirectory = config.path;
     FileType type = getFileType(sourcePath);
     runner.args.add(type == typeCppSource ? profile.cxx : profile.c);
-    runner.args.add("-fdiagnostics-color=always");
+    runner.args.add(colorOption());
     runner.args.add("-MMD"); // -MD
     for (StringList::Iterator i(config.includeSearchPath); i; i.next()) {
         char inc[maxPath + 16];
@@ -325,7 +330,7 @@ bool GccCompiler::link(const Config& config, const char* execPath, const FileSta
     Runner runner; 
     runner.currentDirectory = config.path;
     runner.args.add(profile.linker);
-    runner.args.add("-fdiagnostics-color=always");
+    runner.args.add(colorOption());
     for (StringList::Iterator i(config.linkerOptions); i; i.next()) {
         if (!isValidGccOption(i->string, i->length)) return false;
         runner.args.add(i->string, i->length);

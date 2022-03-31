@@ -33,3 +33,14 @@ extern int logLevel;
 
 extern const char* em;
 extern const char* noem;
+
+
+enum ColorMode {
+    colorNever,
+    colorAlways,
+    colorAuto
+};
+
+void setColor(ColorMode);
+
+extern bool colorEnabled;

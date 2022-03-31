@@ -2,25 +2,36 @@
 
 #include <cstdio>
 #include <cstdarg> 
+#include <unistd.h>
 
 int logLevel = logLevelInfo;
 
-std::mutex outputMutex;
+static std::mutex outputMutex;
 
-const char* em   = "\x1b[1m";
-const char* noem = "\x1b[22m";
 
-const char* prefix[3] = { 
+const char* emColor   = "\x1b[1m";
+const char* noemColor = "\x1b[22m";
+
+static const char* prefixColor[3] = { 
     "\x1b[31m*** ERROR: ",
     "",
     "\x1b[2m",
 };
 
-const char* suffix[3] = { 
+static const char* suffixColor[3] = { 
     "\x1b[22;0m",
     "",
     "\x1b[0m",
 };
+
+
+const char* em   = "";
+const char* noem = "";
+
+static const char* prefix[3] = { "", "", "", };
+
+static const char* suffix[3] = { "", "", "", };
+
 
 void say(int level, const char* format, ...) {
     std::lock_guard<std::mutex> lock(outputMutex);
@@ -33,7 +44,7 @@ void say(int level, const char* format, ...) {
 }
 
 
-Blob output;
+static Blob output;
 
 
 void delayedError(const char* format, ...) {
@@ -74,4 +85,45 @@ void printOutput(StringList& list) {
         fprintf(stderr, "%s\n", i->string);
     }
 }
+
+
+bool colorEnabled = false;
+
+
+void setColor(ColorMode mode) {
+    switch (mode) {
+        case colorNever: colorEnabled = false; break;
+        case colorAlways: colorEnabled = true; break;
+        case colorAuto: colorEnabled = isatty(fileno(stderr)); break;
+    }
+    if (colorEnabled) {
+        em = emColor;
+        noem = noemColor;
+        prefix[logLevelError] = prefixColor[logLevelError];
+        prefix[logLevelInfo ] = prefixColor[logLevelInfo ];
+        prefix[logLevelDebug] = prefixColor[logLevelDebug];
+        suffix[logLevelError] = prefixColor[logLevelError];
+        suffix[logLevelInfo ] = prefixColor[logLevelInfo ];
+        suffix[logLevelDebug] = prefixColor[logLevelDebug];
+    }
+    else {
+        em = "";
+        noem = "";
+        prefix[logLevelError] = "";
+        prefix[logLevelInfo ] = "";
+        prefix[logLevelDebug] = "";
+        suffix[logLevelError] = "";
+        suffix[logLevelInfo ] = "";
+        suffix[logLevelDebug] = "";
+    }
+}
+
+
+struct Init {
+    Init() {
+        setColor(colorAuto);
+    }
+};
+
+Init init;
 

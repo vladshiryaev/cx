@@ -32,14 +32,15 @@ Only things that have changed since last invocation will be be recompiled.
 
 ## Options
 
-|Option       |Description |
-|-------------|--------------------------------------------------------------|
-|`-b, --build`|Build only, don't run. This is the default if NAME is omitted.|
-|`-f, --force`|Rebuild everything, ignore current cached state.|
-|`--clean`    |Clean build state (delete artifacts directories) recursively, starting with the specied directory (or current directory, if omitted).|
-|`-q, --quiet`|Print nothing but errors.|
-|`--verbose`  |Print more. The opposite of --quiet. The last one wins.|
-|`-h, --help` |Print this summary and exit. Nothing else will be done.|
+|Option                      |Description |
+|----------------------------|--------------------------------------------------------------|
+|`-b, --build`               |Build only, don't run. This is the default if NAME is omitted.|
+|`-f, --force`               |Rebuild everything, ignore current cached state.|
+|`--clean`                   |Clean build state (delete artifacts directories) recursively, starting with the specied directory (or current directory, if omitted).|
+|`--color=always|never|auto` |Enable color. `Auto` means enabled if stderr is a terminal.|
+|`-q, --quiet`               |Print nothing but errors.|
+|`--verbose`                 |Print more. The opposite of --quiet. The last one wins.|
+|`-h, --help`                |Print this summary and exit. Nothing else will be done.|
 
 
 ## Building
