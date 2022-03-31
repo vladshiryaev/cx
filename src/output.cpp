@@ -102,9 +102,9 @@ void setColor(ColorMode mode) {
         prefix[logLevelError] = prefixColor[logLevelError];
         prefix[logLevelInfo ] = prefixColor[logLevelInfo ];
         prefix[logLevelDebug] = prefixColor[logLevelDebug];
-        suffix[logLevelError] = prefixColor[logLevelError];
-        suffix[logLevelInfo ] = prefixColor[logLevelInfo ];
-        suffix[logLevelDebug] = prefixColor[logLevelDebug];
+        suffix[logLevelError] = suffixColor[logLevelError];
+        suffix[logLevelInfo ] = suffixColor[logLevelInfo ];
+        suffix[logLevelDebug] = suffixColor[logLevelDebug];
     }
     else {
         em = "";
