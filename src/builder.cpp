@@ -176,17 +176,17 @@ void Builder::addUnitLibDeps(FileStateList& libList) {
 
 
 bool Builder::processPath(const char* path) {
-    if (master == this) {
-        if (!currentDirectory) {
-            currentDirectory = new char[maxPath];
-        }
-        getCurrentDirectory(currentDirectory);
-    }
-    else {
-        currentDirectory = master->currentDirectory;
-    }
     unitPath[0] = 0;
     objectToRun[0] = 0;
+    if (master != this) {
+        currentDirectory = master->currentDirectory;
+        strcpy(unitPath, path);
+        return true;
+    }
+    if (!currentDirectory) {
+        currentDirectory = new char[maxPath];
+    }
+    getCurrentDirectory(currentDirectory);
     if (*path == 0) {
         strcpy(unitPath, currentDirectory);
         options.skipRunning = true;

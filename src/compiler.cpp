@@ -69,6 +69,7 @@ FileType getFileType(const char* path) {
     return typeUnknown;
 }
 
+
 char* makeDerivedPath(const char* source, const char* suffix, char* derived) {
     const char* lastSlash = nullptr;
     const char* p = source;
