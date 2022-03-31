@@ -2,8 +2,9 @@
 
 function run() {
     path="$1"
-    echo "Testing $path "
-    out=$(cx -q "$path")
+    shift
+    echo "Testing $path"
+    out=$(cx -q "$path" "$@")
     #echo $out
     if [ x"$out" != x"OK" ]; then 
         echo FAIL
@@ -13,7 +14,7 @@ function run() {
 
 function expect_failure() {
     path="$1"
-    echo "Testing $path "
+    echo "Testing $path"
     cx -q "$path" 2>/dev/null
     if [ $? -eq 0 ]; then 
         echo FAIL
@@ -37,6 +38,7 @@ function run_all() {
     run cpp_deep_1/progs/prog1.cpp
     run c_def
     run cpp_def
+    run cpp_args OK
 
     expect_failure c_missing_header
     expect_failure invalid_opt_1
