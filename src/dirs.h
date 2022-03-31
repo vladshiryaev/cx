@@ -3,8 +3,17 @@
 #include <cstdint>
 #include <ctime>
 
+// Keep it simple.
 const int maxPath = 1024;
 
+// A 'tag' is a shallow fingerprint of a file, like a (mostly lossless)
+// combination of timestamp and size. So like Make, except we don't care about
+// ordering of time, and the tags of inputs must be saved at the moment of
+// building a derivative.
+uint64_t makeFileTag(const char* path);
+
+
+// For scanning directories.
 class Directory {
 public:
     enum Type {
@@ -34,6 +43,8 @@ private:
     int pathLength;
 };
 
+// Some path utilities.
+
 bool directoryExists(const char*);
 bool fileExists(const char*);
 bool makeDirectory(const char*);
@@ -55,8 +66,6 @@ int getDirectoryPartLength(const char* path);
 const char* getDirectory(const char* path, char* dir);
 char* normalizePath(const char* in, char* out);
 char* getParentDirectory(const char* in, char* out);
-
-uint64_t makeFileTag(const char* path);
 
 bool changeDirectory(const char*);
 char* getCurrentDirectory(char*);

@@ -78,9 +78,9 @@ bool Builder::checkDeps(const char* targetPath, uint32_t toolTag, uint32_t optTa
     }
     std::lock_guard<std::mutex> lock(mutex);
     for (FileStateList::Iterator dep(deps); dep; dep.next()) {
-        if (dep->tag != lookupFileTag(dep->name, fileStateCache)) {
+        if (dep->tag != lookupFileTag(dep->string, fileStateCache)) {
             char absDepName[maxPath];
-            TRACE("File %s has changed", rebase(dep->name, absDepName));
+            TRACE("File %s has changed", rebase(dep->string, absDepName));
             return false;
         }
     }
@@ -125,7 +125,7 @@ void Builder::extractUnitDirDeps(Dependencies& deps) {
         char dir[maxPath];
         char rebased[maxPath];
         char normalized[maxPath];
-        normalizePath(rebase(getDirectory(i->name, dir), rebased), normalized);
+        normalizePath(rebase(getDirectory(i->string, dir), rebased), normalized);
         if (dir[0]) {
             master->unitDirDeps.put(normalized);
         }
@@ -140,7 +140,7 @@ bool Builder::buildUnitDirDeps(uint64_t& tag) {
             other.master = master;
             other.options.force = options.force;
             char name[maxPath];
-            strcpy(name, i->name);
+            strcpy(name, i->string);
             if (!other.build(name)) {
                 return false;
             }
@@ -149,7 +149,7 @@ bool Builder::buildUnitDirDeps(uint64_t& tag) {
     tag = 0;
     for (FileStateDict::Iterator i(unitDirDeps); i; i.next()) {
         char libPath[maxPath];
-        i->tag = makeFileTag(makeDerivedPath(i->name, "library", libPath));
+        i->tag = makeFileTag(makeDerivedPath(i->string, "library", libPath));
         tag = tag * 11 + i->tag;
     }
     return true;
@@ -163,14 +163,14 @@ void Builder::addUnitLibDeps(FileStateList& libList) {
     for (FileStateDict::Iterator i(unitDirDeps); i; i.next()) {
         if (i->tag) {
             char libPath[maxPath];
-            makeDerivedPath(i->name, "library", libPath);
+            makeDerivedPath(i->string, "library", libPath);
             TRACE("Depend on library %s", libPath);
             char absLibPath[maxPath];
             libList.add(0, rebasePath(currentDirectory, libPath, absLibPath));
         }
     }
-    for (StringDict::Iterator i(libDeps); i; i.next()) {
-        libList.add(0, i->name, i->length);
+    for (FileStateDict::Iterator i(libDeps); i; i.next()) {
+        libList.add(0, i->string, i->length);
     }
 }
 
@@ -351,7 +351,7 @@ bool Builder::build(const char* path) {
         return false;
     }
     for (StringList::Iterator i(config.externalLibs); i; i.next()) {
-        master->libDeps.put(i->data, i->length);
+        master->libDeps.put(i->string, i->length);
     }
     scanDirectory();
     if (sources.isEmpty()) {
@@ -375,7 +375,7 @@ bool Builder::build(const char* path) {
     FileStateList objList;
     char objPath[maxPath];
     for (FileStateList::Iterator i(sources); i; i.next()) {
-        batch.add(new UpdateSourceJob(*this, i->name, skipDepsCheck));
+        batch.add(new UpdateSourceJob(*this, i->string, skipDepsCheck));
     }
     batch.run();
     unitDirDeps.put(1, unitPath);
@@ -439,18 +439,18 @@ bool Builder::build(const char* path) {
     char execPath[maxPath];
     execPath[0] = 0;
     for (FileStateList::Iterator i(objListMain); i; i.next()) {
-        if (objectToRun[0] != 0 && strcmp(i->name, objectToRun) != 0) {
+        if (objectToRun[0] != 0 && strcmp(i->string, objectToRun) != 0) {
             continue;
         }
         uint64_t execTag = i->tag + libsTag;
-        addSuffix(i->name, ".exe", execPath);
+        addSuffix(i->string, ".exe", execPath);
         uint8_t flags;
         if (anyRecompiled || options.force || !checkDeps(execPath, profile->tag, config.linkerOptionsTag, execTag, flags)) {
             char execDepsPath[maxPath];
             char absExecDepsPath[maxPath];
             rebase(addSuffix(execPath, ".deps", execDepsPath), absExecDepsPath);
             FileStateList execObjList;
-            execObjList.add(i->tag, i->name, i->length);
+            execObjList.add(i->tag, i->string, i->length);
             FileStateList execLibList;
             addUnitLibDeps(execLibList);
             if (!compiler->link(config, execPath, execObjList, execLibList)) {
@@ -492,7 +492,7 @@ bool Builder::build(const char* path) {
         runner.args.add(rebase(execPath, absExecPath));
         if (options.runArgs) {
             for (StringList::Iterator i(*options.runArgs); i; i.next()) {
-                runner.args.add(i->data, i->length);
+                runner.args.add(i->string, i->length);
             }
         }
         runner.exec();

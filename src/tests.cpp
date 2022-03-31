@@ -80,8 +80,7 @@ void testStringList() {
 
     char buf[64];
     for (int i = 0; i < 2000; i++) {
-        sprintf(buf, "s-%09d-%d", i, i);
-        list.add(buf);
+        list.add(buf, sprintf(buf, "s-%09d-%d", i, i));
     }
     assert(list.getCount() == 2000);
 
@@ -89,7 +88,7 @@ void testStringList() {
     for (int j = 0; j < 2000; j++, i.next()) {
         sprintf(buf, "s-%09d-%d", j, j);
         assert(i);
-        assert(strcmp(i->data, buf) == 0);
+        assert(strcmp(i->string, buf) == 0);
     }
     assert(!i);
 }
@@ -97,46 +96,19 @@ void testStringList() {
 
 void testFileStateList() {
     FileStateList list(256);
-    list.add(1, "f1");
-    list.add(2, "f2longer");
-    list.add(3, "f3evenlonger");
-
-    FileStateList::Iterator i(list);
-    assert(i);
-    assert(i->tag == 1);
-    assert(i->length == 2);
-    assert(strcmp(i->name, "f1") == 0);
-    i.next();
-
-    assert(i);
-    assert(i->tag == 2);
-    assert(i->length == 8);
-    assert(strcmp(i->name, "f2longer") == 0);
-    i.next();
-
-    assert(i);
-    assert(i->tag == 3);
-    assert(i->length == 12);
-    assert(strcmp(i->name, "f3evenlonger") == 0);
-    i.next();
-    assert(!i);
 
     char name[64];
     for (int i = 0; i < 1000; i++) {
-        sprintf(name, "key-%09d-%d", i, i);
-        list.add(i, name);
+        list.add(i, name, sprintf(name, "key-%09d-%d", i, i));
     }
-    assert(list.getCount() == 1003);
+    assert(list.getCount() == 1000);
 
-    i = FileStateList::Iterator(list);
-    i.next();
-    i.next();
-    i.next();
+    auto i = FileStateList::Iterator(list);
     for (int j = 0; j < 1000; j++, i.next()) {
         sprintf(name, "key-%09d-%d", j, j);
         assert(i);
         assert(i->tag == j);
-        assert(strcmp(i->name, name) == 0);
+        assert(strcmp(i->string, name) == 0);
     }
     assert(!i);
 }
@@ -146,66 +118,24 @@ void testFileStateDict() {
     FileStateDict dict;
     FileStateDict::Entry* entry;
 
-    assert(dict.add(1, "f1", entry));
-    assert(dict.add(2, "f2longer", entry));
-    assert(dict.add(3, "f3evenlonger", entry));
-    assert(dict.getCount() == 3);
-
-    FileStateDict::Iterator i(dict);
-    assert(i);
-    assert(i->tag == 1);
-    assert(i->length == 2);
-    assert(strcmp(i->name, "f1") == 0);
-    i.next();
-
-    assert(i);
-    assert(i->tag == 2);
-    assert(i->length == 8);
-    assert(strcmp(i->name, "f2longer") == 0);
-    i.next();
-
-    assert(i);
-    assert(i->tag == 3);
-    assert(i->length == 12);
-    assert(strcmp(i->name, "f3evenlonger") == 0);
-    i.next();
-    assert(!i);
-
-    entry = dict.find("f1");
-    assert(entry);
-    assert(strcmp(entry->name, "f1") == 0);
-
-    entry = dict.find("f2longer");
-    assert(entry);
-    assert(strcmp(entry->name, "f2longer") == 0);
-
-    entry = dict.find("f3evenlonger");
-    assert(entry);
-    assert(strcmp(entry->name, "f3evenlonger") == 0);
-
-    assert(!dict.find("xxx"));
-
     char name[64];
     for (int i = 0; i < 1000; i++) {
         sprintf(name, "key-%09d-%d", i, i);
         assert(dict.add(i, name, entry));
     }
-    assert(dict.getCount() == 1003);
+    assert(dict.getCount() == 1000);
 
     for (int i = 0; i < 1000; i++) {
         sprintf(name, "key-%09d-%d", i, i);
-        assert((entry = dict.find(name)) && strcmp(entry->name, name) == 0);
+        assert((entry = dict.find(name)) && strcmp(entry->string, name) == 0);
     }
 
-    i = FileStateDict::Iterator(dict);
-    i.next();
-    i.next();
-    i.next();
+    auto i = FileStateDict::Iterator(dict);
     for (int j = 0; j < 1000; j++, i.next()) {
         sprintf(name, "key-%09d-%d", j, j);
         assert(i);
         assert(i->tag == j);
-        assert(strcmp(i->name, name) == 0);
+        assert(strcmp(i->string, name) == 0);
     }
     assert(!i);
 }
@@ -239,23 +169,23 @@ void testConfig() {
     assert(config.parse("config", text));
     {
         StringList::Iterator i(config.compilerCOptions);
-        assert(i); assert(strcmp(i->data, "-O2") == 0); i.next();
-        assert(i); assert(strcmp(i->data, "-Df= ") == 0); i.next();
-        assert(i); assert(strcmp(i->data, "-O3") == 0); i.next();
+        assert(i); assert(strcmp(i->string, "-O2") == 0); i.next();
+        assert(i); assert(strcmp(i->string, "-Df= ") == 0); i.next();
+        assert(i); assert(strcmp(i->string, "-O3") == 0); i.next();
         assert(!i);
     }
     {
         StringList::Iterator i(config.compilerCppOptions);
-        assert(i); assert(strcmp(i->data, "-Df= ") == 0); i.next();
-        assert(i); assert(strcmp(i->data, "-Df=\" \"") == 0); i.next();
-        assert(i); assert(strcmp(i->data, "-Df=' '") == 0); i.next();
+        assert(i); assert(strcmp(i->string, "-Df= ") == 0); i.next();
+        assert(i); assert(strcmp(i->string, "-Df=\" \"") == 0); i.next();
+        assert(i); assert(strcmp(i->string, "-Df=' '") == 0); i.next();
         assert(!i);
     }
     {
         StringList::Iterator i(config.externalLibs);
-        assert(i); assert(strcmp(i->data, "a") == 0); i.next();
-        assert(i); assert(strcmp(i->data, "b c") == 0); i.next();
-        assert(i); assert(strcmp(i->data, "c d") == 0); i.next();
+        assert(i); assert(strcmp(i->string, "a") == 0); i.next();
+        assert(i); assert(strcmp(i->string, "b c") == 0); i.next();
+        assert(i); assert(strcmp(i->string, "c d") == 0); i.next();
         assert(!i);
     }
 }

@@ -1,11 +1,15 @@
 #include "blob.h"
-#include "output.h"
 
-#include <algorithm>
 #include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+
+
+Blob::Blob(int n): data(nullptr), size(0), allocated(0) {
+    data = new char[n];
+    allocated = n;
+}
 
 
 Blob::Blob(const Blob& other): data(nullptr), size(0), allocated(0) {
@@ -16,11 +20,13 @@ Blob::Blob(const Blob& other): data(nullptr), size(0), allocated(0) {
 
 
 Blob& Blob::operator=(const Blob& other) {
-    delete[] data;
-    data = nullptr;
-    size = allocated = 0;
-    data = new char[other.allocated]; 
-    allocated = other.allocated;
+    if (allocated < other.allocated) {
+        delete[] data;
+        data = nullptr;
+        size = allocated = 0;
+        data = new char[other.allocated];
+        allocated = other.allocated;
+    }
     size = other.size;
     memcpy(data, other.data, other.size);
     return *this;
@@ -32,7 +38,7 @@ char* Blob::growTo(int n, bool retain) {
     if (allocated < n) {
         int newAlloc = allocated * 2;
         if (newAlloc < n) {
-            newAlloc = (n + 4095) & ~4095;
+            newAlloc = (n + 1023) & ~1023;
         }
         char* p = new char[newAlloc];
         if (retain) {
@@ -67,7 +73,7 @@ bool Blob::load(const char* path) {
     struct stat s;
     if (stat(path, &s) == 0) {
        int fileSize = s.st_size;
-       growTo((fileSize + 256) & ~63);
+       growTo((fileSize + 128) & ~63); // So reading a little past the end of a just loaded blob is OK.
        ok = ::load(path, data, fileSize);
        size = fileSize;
        data[size] = 0;

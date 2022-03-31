@@ -296,7 +296,7 @@ bool Config::parse(const char* path, const char* text) {
                     splitPath(path, dir, name);
                     char absIncPath[maxPath];
                     for (StringList::Iterator i(temp); i; i.next()) {
-                        includeSearchPath.add(rebasePath(dir, i->data, absIncPath));
+                        includeSearchPath.add(rebasePath(dir, i->string, absIncPath));
                         TRACE("Include path: %s", absIncPath);
                     }
                 }

@@ -24,8 +24,8 @@ static const char** prepareArgs(const StringList& args, const char* dir) {
     if (logLevel >= logLevelDebug) {
         Blob text;
         for (StringList::Iterator i(args); i; i.next()) {
-            argPtrs[argCount++] = i->data;
-            text.add(i->data, i->length);
+            argPtrs[argCount++] = i->string;
+            text.add(i->string, i->length);
             text.add(" ", 1);
         }
         text.data[text.size] = 0;
@@ -41,7 +41,7 @@ static const char** prepareArgs(const StringList& args, const char* dir) {
     }
     else {
         for (StringList::Iterator i(args); i; i.next()) {
-            argPtrs[argCount++] = i->data;
+            argPtrs[argCount++] = i->string;
         }
     }
     argPtrs[argCount] = nullptr;

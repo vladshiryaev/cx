@@ -110,9 +110,9 @@ GccCompiler::GccCompiler(Profile& p): Compiler(p) {
     if (runner.run() && runner.exitStatus == 0 && !runner.output.isEmpty()) {
         StringList::Iterator i(runner.output);
         if (i->length + 1 <= sizeof(profile.version)) {
-            memcpy(profile.version, i->data, i->length + 1);
+            memcpy(profile.version, i->string, i->length + 1);
             TRACE("gcc %s", profile.version);
-            uint32_t versionHash = hash(i->data, i->length);
+            uint32_t versionHash = hash(i->string, i->length);
             profile.init();
             profile.tag += versionHash;
             return;
@@ -248,7 +248,7 @@ bool GccCompiler::compile(const Config& config, const char* sourcePath, Dependen
     runner.args.add("-MMD"); // -MD
     for (StringList::Iterator i(config.includeSearchPath); i; i.next()) {
         char inc[maxPath + 16];
-        int len = sprintf(inc, "-I%s", i->data);
+        int len = sprintf(inc, "-I%s", i->string);
         runner.args.add(inc, len);
     }
     runner.args.add("-I..");
@@ -256,12 +256,12 @@ bool GccCompiler::compile(const Config& config, const char* sourcePath, Dependen
     runner.args.add("-I../../..");
     runner.args.add("-I../../../..");
     for (StringList::Iterator i(config.compilerOptions); i; i.next()) {
-        if (!isValidGccOption(i->data, i->length)) return false;
-        runner.args.add(i->data, i->length);
+        if (!isValidGccOption(i->string, i->length)) return false;
+        runner.args.add(i->string, i->length);
     }
     for (StringList::Iterator i(type == typeCppSource ? config.compilerCppOptions : config.compilerCOptions); i; i.next()) {
-        if (!isValidGccOption(i->data, i->length)) return false;
-        runner.args.add(i->data, i->length);
+        if (!isValidGccOption(i->string, i->length)) return false;
+        runner.args.add(i->string, i->length);
     }
     runner.args.add("-c");
     runner.args.add(sourcePath);
@@ -300,14 +300,14 @@ bool GccCompiler::containsMain(const Config& config, const char* objPath) {
     if (runner.run() && runner.exitStatus == 0) {
         for (StringList::Iterator i(runner.output); i; i.next()) {
             if (i->length >= 8) {
-                switch (i->data[0]) {
+                switch (i->string[0]) {
                     case 'm':
-                        if (memcmp(i->data, "main T ", 7) == 0) {
+                        if (memcmp(i->string, "main T ", 7) == 0) {
                             return true;
                         }
                         break;
                     case '_':
-                        if (memcmp(i->data, "_main T ", 8) == 0) {
+                        if (memcmp(i->string, "_main T ", 8) == 0) {
                             return true;
                         }
                         break;
@@ -327,18 +327,18 @@ bool GccCompiler::link(const Config& config, const char* execPath, const FileSta
     runner.args.add(profile.linker);
     runner.args.add("-fdiagnostics-color=always");
     for (StringList::Iterator i(config.linkerOptions); i; i.next()) {
-        if (!isValidGccOption(i->data, i->length)) return false;
-        runner.args.add(i->data, i->length);
+        if (!isValidGccOption(i->string, i->length)) return false;
+        runner.args.add(i->string, i->length);
     }
     runner.args.add("-o");
     runner.args.add(execPath);
     for (FileStateList::Iterator i(objList); i; i.next()) {
-        runner.args.add(i->name, i->length);
+        runner.args.add(i->string, i->length);
     }
     if (!libList.isEmpty()) {
         runner.args.add("-Wl,--start-group");
         for (FileStateList::Iterator i(libList); i; i.next()) {
-            runner.args.add(i->name, i->length);
+            runner.args.add(i->string, i->length);
         }
         runner.args.add("-Wl,--end-group");
     }
@@ -366,7 +366,7 @@ bool GccCompiler::makeLibrary(const Config& config, const char* libPath, const F
     runner.args.add("crs");
     runner.args.add(libPath);
     for (FileStateList::Iterator i(objList); i; i.next()) {
-        runner.args.add(i->name, i->length);
+        runner.args.add(i->string, i->length);
     }
     if (runner.run()) {
         if (runner.exitStatus == 0) {

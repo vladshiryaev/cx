@@ -56,7 +56,7 @@ void delayedError(StringList& list) {
     std::lock_guard<std::mutex> lock(outputMutex);
     for (StringList::Iterator i(list); i && output.size < 1024 * 1024; i.next()) {
         char* p = output.growBy(i->length + 1);
-        memcpy(p, i->data, i->length);
+        memcpy(p, i->string, i->length);
         p[i->length] = '\n';
     }
 }
@@ -71,7 +71,7 @@ void delayedErrorFlush() {
 void printOutput(StringList& list) {
     std::lock_guard<std::mutex> lock(outputMutex);
     for (StringList::Iterator i(list); i; i.next()) {
-        fprintf(stderr, "%s\n", i->data);
+        fprintf(stderr, "%s\n", i->string);
     }
 }
 

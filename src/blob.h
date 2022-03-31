@@ -1,11 +1,12 @@
 #pragma once
 
+// A chunk of memory.
 class Blob {
 public:
     char* data;
     int size;
     int allocated;
-    Blob(int n = 1024): data(new char[n]), size(0), allocated(n) {}
+    Blob(int n = 1024);
     ~Blob() { delete[] data; }
     Blob(const Blob&);
     Blob& operator=(const Blob&);
