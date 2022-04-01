@@ -137,7 +137,7 @@ nm: /usr/bin/gcc-nm-7
 ```
 Those are exact names by which compiler etc. will be invoked. Note, only GCC is currently supported, and whatever program is specified as, e.g., `g++` must behave exactly as `g++` does.
 
-## Multiple configurations
+### Multiple configurations
 
 Both `cx.top` and `cx.unit` may have sections for different build configurations.
 A configuration has a name, and it may specify compiler versions, compiler options, external libraries, etc., specific to that configuration.
