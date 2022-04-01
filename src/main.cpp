@@ -9,6 +9,7 @@
 
 
 const char* path = "";
+const char* config = "";
 Builder::Options buildOptions;
 StringList runArgs;
 bool sanity = false;
@@ -40,6 +41,10 @@ void printHelp() {
     printf("    Build only, don't run. This is the default if NAME is omitted.\n");
     printf("-f, --force\n");
     printf("    Rebuild everything, ignore current cached state.\n");
+    printf("--config=<config_id>\n");
+    printf("    Build for configuration <config_id>. The same effect may be acheived by\n");
+    printf("    setting environment variable CX_CONFIG (command line option overrides that).\n");
+    printf("    By default configuration 'default' is assumed.\n");
     printf("--clean\n");
     printf("    Clean build state (delete artifacts directories) recursively, starting\n");
     printf("    with the specied directory (or current directory, if omitted).\n");
@@ -47,7 +52,7 @@ void printHelp() {
     printf("    Enable color. By default auto, meaning enabled if stderr is a terminal.\n");
     printf("-q, --quiet\n");
     printf("    Print nothing but errors.\n");
-    printf("--verbose\n");
+    printf("-v, --verbose\n");
     printf("    Print more. The opposite of --quiet. The last one wins.\n");
     printf("-h, --help\n");
     printf("    Print this summary and exit. Nothing else will be done.\n");
@@ -83,7 +88,7 @@ void parseOptions(const char* args[]) {
                      }
                      break;
                  case 'v':
-                     if (strcmp(opt, "verbose") == 0) {
+                     if (opt[1] == 0 || strcmp(opt, "verbose") == 0) {
                          logLevel = logLevelDebug;
                          ok = true;
                      }
@@ -98,6 +103,10 @@ void parseOptions(const char* args[]) {
                  case 'c':
                      if (strcmp(opt, "clean") == 0) {
                          clean = true;
+                         ok = true;
+                     }
+                     else if (strncmp(opt, "config=", 7) == 0) {
+                         config = opt + 7;
                          ok = true;
                      }
                      else if (strncmp(opt, "color=", 6) == 0) {
@@ -155,6 +164,11 @@ void parseOptions(const char* args[]) {
 }
 
 bool doit(const char* argv[]) {
+    config = getVariable("CX_CONFIG");
+    if (!(config && *config)) {
+        config = "default";
+    }
+
     parseOptions(argv);
 
     if (help) {
@@ -162,7 +176,7 @@ bool doit(const char* argv[]) {
         return true;
     }
     if (clean) {
-        if (!Builder::clean(path)) {
+        if (!Builder::clean(path, config)) {
             return false;
         }
         if (cleanOnly) {
@@ -178,7 +192,7 @@ bool doit(const char* argv[]) {
     Builder builder;
     builder.options = buildOptions;
 
-    return builder.build(path);
+    return builder.build(path, config);
 }
 
 int main(int argc, const char* argv[]) {

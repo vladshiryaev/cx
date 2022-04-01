@@ -13,7 +13,7 @@ enum FileType {
 
 extern const char* cacheDirName;
 FileType getFileType(const char* path);
-char* makeDerivedPath(const char* source, const char* suffix, char* derived);
+char* makeDerivedPath(const char* configId, const char* source, const char* suffix, char* derived);
 
 
 class Compiler {

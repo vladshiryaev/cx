@@ -18,6 +18,18 @@ Builder::~Builder() {
 }
 
 
+const char* Builder::getConfigId(const char* configId) {
+    if (configId && *configId) {
+        return configId;
+    }
+    configId = getVariable("CX_CONFIG");
+    if (configId && *configId) {
+        return configId;
+    }
+    return "default";
+}
+
+
 char* Builder::rebase(const char* relPath, char* absPath) {
     rebasePath(unitPath, relPath, absPath);
     return absPath;
@@ -149,7 +161,7 @@ bool Builder::buildUnitDirDeps(uint64_t& tag) {
     tag = 0;
     for (FileStateDict::Iterator i(unitDirDeps); i; i.next()) {
         char libPath[maxPath];
-        i->tag = makeFileTag(makeDerivedPath(i->string, "library", libPath));
+        i->tag = makeFileTag(makeDerivedPath(profile->id, i->string, "library", libPath));
         tag = tag * 11 + i->tag;
     }
     return true;
@@ -163,7 +175,7 @@ void Builder::addUnitLibDeps(FileStateList& libList) {
     for (FileStateDict::Iterator i(unitDirDeps); i; i.next()) {
         if (i->tag) {
             char libPath[maxPath];
-            makeDerivedPath(i->string, "library", libPath);
+            makeDerivedPath(profile->id, i->string, "library", libPath);
             TRACE("Depend on library %s", libPath);
             char absLibPath[maxPath];
             libList.add(0, rebasePath(currentDirectory, libPath, absLibPath));
@@ -177,7 +189,7 @@ void Builder::addUnitLibDeps(FileStateList& libList) {
 
 bool Builder::processPath(const char* path) {
     unitPath[0] = 0;
-    objectToRun[0] = 0;
+    sourceToRun[0] = 0;
     if (master != this) {
         currentDirectory = master->currentDirectory;
         strcpy(unitPath, path);
@@ -196,15 +208,13 @@ bool Builder::processPath(const char* path) {
     if (type == typeCSource || type == typeCppSource) {
         if (fileExists(path)) {
             char dir[maxPath];
-            char name[maxPath];
-            if (splitPath(path, dir, name)) {
+            if (splitPath(path, dir, sourceToRun)) {
                 rebasePath(currentDirectory, dir, unitPath);
             }
             else {
                 strcpy(unitPath, currentDirectory);
-                strcpy(name, path);
+                strcpy(sourceToRun, path);
             }
-            makeDerivedPath(name, ".o", objectToRun);
             return true;
         }
     }
@@ -227,7 +237,7 @@ bool Builder::processPath(const char* path) {
 }
 
 
-bool Builder::clean(const char* path) {
+bool Builder::clean(const char* path, const char* configId) {
     char dir[maxPath];
     if (fileExists(path)) {
         path = getDirectory(path, dir);
@@ -274,7 +284,7 @@ struct UpdateSourceJob: public Job {
 
 bool Builder::updateSource(const char* sourcePath, bool skipDepsCheck, bool& recompiled, Dependencies& deps) {
     char objPath[maxPath];
-    makeDerivedPath(sourcePath, ".o", objPath);
+    makeDerivedPath(profile->id, sourcePath, ".o", objPath);
     recompiled = false;
     uint8_t flags;
     if (!(skipDepsCheck || options.force) && checkDeps(objPath, profile->tag, compiler->getCompilerOptionsTag(config, sourcePath), deps)) {
@@ -285,7 +295,7 @@ bool Builder::updateSource(const char* sourcePath, bool skipDepsCheck, bool& rec
 }
 
 
-bool Builder::loadProfile() {
+bool Builder::loadProfile(const char* configId) {
     if (master == this) {
         if (profile) {
             delete profile;
@@ -306,7 +316,7 @@ bool Builder::loadProfile() {
             memcpy(absProfilePath + length, "cx.top", 7); 
             if (fileExists(absProfilePath)) {
                 TRACE("Found %s", absProfilePath);
-                if (!profile->commonConfig.load(absProfilePath)) {
+                if (!profile->commonConfig.load(absProfilePath, configId)) {
                     return false;
                 }
                 memcpy(topPath, absProfilePath, length);
@@ -318,6 +328,7 @@ bool Builder::loadProfile() {
         if (compiler) {
             delete compiler;
         }
+        strcpy(profile->id, configId);
         compiler = new GccCompiler(*profile); // For now GCC only.
         compiler->keepDeps = options.keepDeps;
     }
@@ -330,11 +341,11 @@ bool Builder::loadProfile() {
 }
 
 
-bool Builder::loadConfig() {
+bool Builder::loadConfig(const char* configId) {
     config = profile->commonConfig;
     config.profile = nullptr;
     char unitConfigPath[maxPath];
-    if (!config.load(catPath(unitPath, "cx.unit", unitConfigPath))) {
+    if (!config.load(catPath(unitPath, "cx.unit", unitConfigPath), configId)) {
         return false;
     }
     config.path = unitPath;
@@ -342,12 +353,13 @@ bool Builder::loadConfig() {
 }
 
 
-bool Builder::build(const char* path) {
+bool Builder::build(const char* path, const char* configId) {
+    configId = master == this ? getConfigId(configId) : configId ? configId : master->profile->id;
     if (!processPath(path)) {
         return false;
     }
     TRACE("Building %s", unitPath);
-    if (!(loadProfile() && loadConfig())) {
+    if (!(loadProfile(configId) && loadConfig(configId))) {
         return false;
     }
     for (StringList::Iterator i(config.externalLibs); i; i.next()) {
@@ -359,9 +371,18 @@ bool Builder::build(const char* path) {
         return true;
     }
     // Create cache directory.
-    char cachePath[maxPath];
-    catPath(unitPath, cacheDirName, cachePath);
     bool skipDepsCheck = false;
+    char cacheCommonPath[maxPath];
+    catPath(unitPath, cacheDirName, cacheCommonPath);
+    if (!directoryExists(cacheCommonPath)) {
+        skipDepsCheck = true;
+        if (!makeDirectory(cacheCommonPath)) {
+            FAILURE("Failed to create directory %s", cacheCommonPath);
+            return false;
+        }
+    }
+    char cachePath[maxPath];
+    catPath(cacheCommonPath, configId, cachePath);
     if (!directoryExists(cachePath)) {
         skipDepsCheck = true;
         if (!makeDirectory(cachePath)) {
@@ -389,7 +410,7 @@ bool Builder::build(const char* path) {
         if (job->recompiled) {
             anyRecompiled = true;
         }
-        makeDerivedPath(job->name, ".o", objPath);
+        makeDerivedPath(profile->id, job->name, ".o", objPath);
         if (job->hasMain) {
             objListMain.add(lookupFileTag(objPath, fileStateCache), objPath);
             char absSourcePath[maxPath];
@@ -404,7 +425,7 @@ bool Builder::build(const char* path) {
     // Make unit library.
     uint64_t objTag = 0;
     char libPath[maxPath];
-    makeDerivedPath("library", "", libPath);
+    makeDerivedPath(profile->id, "library", "", libPath);
     if (!objList.isEmpty()) {
         for (FileStateList::Iterator i(objList); i; i.next()) {
             objTag += i->tag;
@@ -438,6 +459,11 @@ bool Builder::build(const char* path) {
     }
     char execPath[maxPath];
     execPath[0] = 0;
+    char objectToRun[maxPath];
+    objectToRun[0] = 0;
+    if (sourceToRun[0]) {
+        makeDerivedPath(profile->id, sourceToRun, ".o", objectToRun);
+    }
     for (FileStateList::Iterator i(objListMain); i; i.next()) {
         if (objectToRun[0] != 0 && strcmp(i->string, objectToRun) != 0) {
             continue;

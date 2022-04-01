@@ -22,8 +22,8 @@ public:
     Builder& operator=(const Builder&) = delete;
     ~Builder();
     
-    bool build(const char* path);
-    static bool clean(const char* path);
+    bool build(const char* path, const char* configId = nullptr);
+    static bool clean(const char* path, const char* configId = nullptr);
 
 private:
     
@@ -33,7 +33,7 @@ private:
     Config config;
     char topPath[maxPath];
     char unitPath[maxPath];
-    char objectToRun[maxPath];
+    char sourceToRun[maxPath];
     FileStateList sources;
     FileStateDict unitDirDeps;
     FileStateDict libDeps;
@@ -45,14 +45,15 @@ private:
     std::mutex mutex;
     FileStateDict fileStateCache;
 
+    static const char* getConfigId(const char* configId);
     char* rebase(const char*, char*);
     uint64_t lookupFileTag(const char*, FileStateDict&);
     bool checkDeps(const char*, uint32_t toolTag, uint32_t optTag, Dependencies&);
     bool checkDeps(const char*, uint32_t toolTag, uint32_t optTag, uint64_t depsTag, uint8_t& flags);
     bool scanDirectory();
     bool processPath(const char*);
-    bool loadProfile();
-    bool loadConfig();
+    bool loadProfile(const char* configId);
+    bool loadConfig(const char* configId);
     bool updateSource(const char*, bool force, bool& recompiled, Dependencies&);
     void extractUnitDirDeps(Dependencies&);
     bool buildUnitDirDeps(uint64_t& depsTag);

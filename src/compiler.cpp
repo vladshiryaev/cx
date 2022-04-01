@@ -70,7 +70,7 @@ FileType getFileType(const char* path) {
 }
 
 
-char* makeDerivedPath(const char* source, const char* suffix, char* derived) {
+char* makeDerivedPath(const char* configId, const char* source, const char* suffix, char* derived) {
     const char* lastSlash = nullptr;
     const char* p = source;
     char temp[maxPath];
@@ -86,6 +86,10 @@ char* makeDerivedPath(const char* source, const char* suffix, char* derived) {
     }
     int len = strlen(cacheDirName);
     memcpy(temp + pos, cacheDirName, len);
+    pos += len;
+    temp[pos++] = '/';
+    len = strlen(configId);
+    memcpy(temp + pos, configId, len);
     pos += len;
     temp[pos++] = '/';
     if (lastSlash) {
@@ -243,8 +247,8 @@ bool GccCompiler::compile(const Config& config, const char* sourcePath, Dependen
     char objPath[maxPath];
     char gccDepsPath[maxPath];
     char depsPath[maxPath];
-    makeDerivedPath(sourcePath, ".o", objPath);
-    makeDerivedPath(sourcePath, ".d", gccDepsPath);
+    makeDerivedPath(profile.id, sourcePath, ".o", objPath);
+    makeDerivedPath(profile.id, sourcePath, ".d", gccDepsPath);
     addSuffix(objPath, ".deps", depsPath);
     Runner runner;
     runner.currentDirectory = config.path;

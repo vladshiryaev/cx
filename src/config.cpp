@@ -157,10 +157,15 @@ static bool parseEndOfLine(const char*& p, int& line) {
 }
 
 
+inline bool isDelim(char c) {
+    return (unsigned char)(c) < 32 || c == ' ' || c == '\t' || c == ':' || c == '#' || c == '[' || c == ']';
+}
+
+
 static bool parseId(const char*& p, const char* id, int idLen) {
     if (memcmp(p, id, idLen) == 0) {
         char c = p[idLen];
-        if ((unsigned char)(c) < 32 || c == ' ' || c == '\t' || c == ':') {
+        if (isDelim(c)) {
             p += idLen;
             return true;
         }
@@ -169,13 +174,13 @@ static bool parseId(const char*& p, const char* id, int idLen) {
 }
 
 
-static bool parseColon(const char* path, int& line, const char*& p) {
+static bool parseChar(const char* path, int& line, const char*& p, char c) {
     parseSpaces(p, line);
-    if (*p == ':') {
+    if (*p == c) {
         p++;
     }
     else {
-        FAILURE("%s:%d: Expected :", path, line);
+        FAILURE("%s:%d: Expected %c", path, line, c);
         return false;
     }
     parseSpaces(p, line);
@@ -183,8 +188,31 @@ static bool parseColon(const char* path, int& line, const char*& p) {
 }
 
 
+static bool parseConfigId(const char* path, int& line, const char*& p, char* id) {
+    if (!parseChar(path, line, p, '[')) {
+        return false;
+    }
+    int len = 0;
+    for ( ; !isDelim(*p); p++) {
+        if (len < maxConfigId - 1) {
+            id[len++] = *p;
+        }
+    }
+    if (len == 0) {
+        FAILURE("%s:%d: Invalid [config_id] section", path, line);
+        return false;
+    }
+    id[len] = 0;
+    parseSpaces(p, line);
+    if (!parseChar(path, line, p, ']')) {
+        return false;
+    }
+    return parseEndOfLine(p, line);
+}
+
+
 static bool parseList(const char* path, int& line, const char*& p, StringList& list) {
-    if (!parseColon(path, line, p)) {
+    if (!parseChar(path, line, p, ':')) {
         return false;
     }
     char item[maxPath];
@@ -202,28 +230,40 @@ static bool parseList(const char* path, int& line, const char*& p, StringList& l
 
 static bool parseValue(const char* path, int& line, const char*& p, char* value, int& length) {
     bool error;
-    return parseColon(path, line, p) && (parseItem(path, line, p, value, length, error) || !error) && parseEndOfLine(p, line);
+    return
+        parseChar(path, line, p, ':') &&
+        (parseItem(path, line, p, value, length, error) || !error) &&
+        parseEndOfLine(p, line);
 }
 
 
-bool Config::load(const char* path) {
+bool Config::load(const char* path, const char* configId) {
     Blob text;
     if (!text.load(path)) {
         afterParse();
         return true;
     }
-    return parse(path, text.data);
+    return parse(path, text.data, configId);
 }
 
 
-bool Config::parse(const char* path, const char* text) {
+bool Config::parse(const char* path, const char* text, const char* configId) {
+    TRACE("Parsing %s for configuration [%s]", path, configId);
+
     #define PROFILE_ONLY if (!profile) goto not_profile
-    #define PARSE_VALUE(WHAT)  if (!parseValue(path, line, p, WHAT, length)) goto error
-    #define PARSE_LIST(WHAT)  if (!parseList(path, line, p, WHAT)) goto error
+    #define PARSE_VALUE(WHAT)  if (!parseValue(path, line, p, (ignoring ? garbageValue : (WHAT)), length)) goto error
+    #define PARSE_LIST(WHAT)  if (!parseList(path, line, p, (ignoring ? garbageList : (WHAT)))) goto error
+
+    char currentConfigSection[maxConfigId];
+    currentConfigSection[0] = 0;
+    bool ignoring = false;
+    char garbageValue[maxPath];
+    StringList garbageList;
 
     int line = 1;
     const char* p = text;
     int length;
+
     for (;;) {
         switch (*p) {
             case 0:
@@ -249,6 +289,16 @@ bool Config::parse(const char* path, const char* text) {
             case '\n':
                 p++;
                 line++;
+                break;
+            case '[':
+                if (!parseConfigId(path, line, p, currentConfigSection)) {
+                    goto error;
+                }
+                if (currentConfigSection[0] == '*' && currentConfigSection[1] == 0) {
+                    currentConfigSection[0] = 0;
+                }
+                ignoring = currentConfigSection[0] && strcmp(currentConfigSection, configId) != 0;
+                TRACE("Section [%s], %s", currentConfigSection[0] ? currentConfigSection : "*", ignoring ? "skipping" : "processing");
                 break;
             case 'a':
                 if (parseId(p, "ar", 2)) {
@@ -281,7 +331,9 @@ bool Config::parse(const char* path, const char* text) {
                 else if (parseId(p, "g++", 3)) {
                     PROFILE_ONLY;
                     PARSE_VALUE(profile->cxx);
-                    memcpy(profile->linker, profile->cxx, length + 1);
+                    if (!ignoring) {
+                        memcpy(profile->linker, profile->cxx, length + 1);
+                    }
                 }
                 else {
                     goto other;
@@ -296,8 +348,10 @@ bool Config::parse(const char* path, const char* text) {
                     splitPath(path, dir, name);
                     char absIncPath[maxPath];
                     for (StringList::Iterator i(temp); i; i.next()) {
-                        includeSearchPath.add(rebasePath(dir, i->string, absIncPath));
-                        TRACE("Include path: %s", absIncPath);
+                        if (!ignoring) {
+                            includeSearchPath.add(rebasePath(dir, i->string, absIncPath));
+                            TRACE("Include path: %s", absIncPath);
+                        }
                     }
                 }
                 else {

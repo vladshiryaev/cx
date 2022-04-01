@@ -1,0 +1,23 @@
+# Common options (section [*] is implied).
+
+cc_options: -O2
+cc_options: -Dfoo=bar
+
+
+
+[release] # Options for configuration 'release'.
+
+cc_options: -O3
+cc_options: -DNDEBUG -D__RELEASE
+
+
+
+[debug] # Options for configuration 'debug'.
+
+cc_options: -O0 -g -D__DEBUG
+
+
+
+[*] # Common section again
+
+cc_options: -Dbar=baz
