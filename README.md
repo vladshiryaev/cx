@@ -68,7 +68,7 @@ Print more. The opposite of `--quiet`. The last one wins.
 Print this summary and exit. Nothing else will be done.
 
 
-## Building
+## Building CX
 
 In order to build `cx` just run `./build` script in the source directory. It's a one-liner bash script that
 will do a bootstrapping build of `cx` (without help from `make` and such), and copy the
@@ -177,4 +177,4 @@ cx -b my_prog
 
 ## Limitations
 
-* For now GCC only and Linux only are supported.
+* For now only GCC and Linux are supported.
