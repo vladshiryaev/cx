@@ -135,7 +135,7 @@ ar: /usr/bin/gcc-ar-7
 nm: /usr/bin/gcc-nm-7
 
 ```
-Those are exact names by which compiler etc. will be invoked. Note, only GCC is currently supported, and whatever program is specified as, e.g., `g++` must behave exactly as `g++` does.
+Those are exact names by which compiler etc. will be invoked. Note, only "GCC-like" toolchains are currently supported, and whatever program is specified as, e.g., `g++` must behave exactly as `g++` does. E.g. `g++: /usr/bin/clang++`, etc. should work.
 
 ### Multiple configurations
 
