@@ -14,6 +14,7 @@ Builder::Options buildOptions;
 StringList runArgs;
 bool sanity = false;
 bool clean = false;
+bool all = false;
 bool cleanOnly = true;
 bool help = false;
 
@@ -47,7 +48,10 @@ void printHelp() {
     printf("    By default configuration 'default' is assumed.\n");
     printf("--clean\n");
     printf("    Clean build state (delete artifacts directories) recursively, starting\n");
-    printf("    with the specied directory (or current directory, if omitted).\n");
+    printf("    with the specied directory (or current directory, if omitted). Only for\n");
+    printf("    the specified or implied configuration.\n");
+    printf("--clean-all\n");
+    printf("    Like above, but for all configurations.\n");
     printf("--color=auto|never|always\n");
     printf("    Enable color. By default auto, meaning enabled if stderr is a terminal.\n");
     printf("-q, --quiet\n");
@@ -103,6 +107,11 @@ void parseOptions(const char* args[]) {
                  case 'c':
                      if (strcmp(opt, "clean") == 0) {
                          clean = true;
+                         ok = true;
+                     }
+                     else if (strcmp(opt, "clean-all") == 0) {
+                         clean = true;
+                         all = true;
                          ok = true;
                      }
                      else if (strncmp(opt, "config=", 7) == 0) {
@@ -176,7 +185,7 @@ bool doit(const char* argv[]) {
         return true;
     }
     if (clean) {
-        if (!Builder::clean(path, config)) {
+        if (!Builder::clean(path, all ? nullptr : config)) {
             return false;
         }
         if (cleanOnly) {

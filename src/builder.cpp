@@ -249,14 +249,22 @@ bool Builder::clean(const char* path, const char* configId) {
         FAILURE("Path %s does not exist, or is not a directory", path);
         return false;
     }
-    TRACE("Cleaning %s", path);
     Runner runner;
     runner.args.add("find");
     runner.args.add(path);
     runner.args.add("-type");
     runner.args.add("d");
-    runner.args.add("-name");
-    runner.args.add(cacheDirName);
+    if (!configId || !*configId) {
+        TRACE("Cleaning %s for all configurations", path);
+        runner.args.add("-name");
+        runner.args.add(cacheDirName);
+    }
+    else {
+        TRACE("Cleaning %s for configuration [%s]", path, configId);
+        runner.args.add("-wholename");
+        char name[maxPath];
+        runner.args.add(name, sprintf(name, "**/%s/%s", cacheDirName, configId));
+    }
     runner.args.add("-exec");
     runner.args.add("rm");
     runner.args.add("-rf");
