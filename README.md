@@ -2,7 +2,8 @@
 
 The `cx` program allows you to run C/C++ code in the same way you would run
 e.g. Python scripts, without explicit compilation, linking, library packaging.
-It may also be seen as a simple alternative to Make, etc. In simple cases it
+
+It may also be seen as an easy-to-use alternative to Make/CMake/Bazel, etc. In simple cases it
 requires zero project configuration.
 
 ## Running
@@ -32,18 +33,42 @@ Only things that have changed since last invocation will be be recompiled.
 
 ## Options
 
-|Option                      |Description |
-|----------------------------|--------------------------------------------------------------|
-|`-b, --build`               |Build only, don't run. This is the default if NAME is omitted.|
-|`-f, --force`               |Rebuild everything, ignore current cached state.|
-|`--clean`                   |Clean build state (delete artifacts directories) recursively, starting with the specied directory (or current directory, if omitted).|
-|`--color=always,never,auto` |Enable color. `Auto` is the default and it means enabled if stderr is a terminal.|
-|`-q, --quiet`               |Print nothing but errors.|
-|`--verbose`                 |Print more. The opposite of --quiet. The last one wins.|
-|`-h, --help`                |Print this summary and exit. Nothing else will be done.|
+`-b, --build`
+
+Build only, don't run. This is the default if NAME is omitted.
+
+`-f, --force`
+
+Rebuild everything, ignore current cached state.
+
+`--config=<config_id>`
+
+Build for configuration `<config_id>`. The same effect may be acheived by
+setting environment variable `CX_CONFIG=<config_id>` (command line option overrides that).
+By default configuration `default` is assumed.
+
+`--clean`
+
+Clean build state (delete artifacts directories) recursively, starting with the specied directory (or current directory, if omitted).
+
+`--color=always|never|auto`
+
+Enable color. `Auto` is the default and it means enabled if stderr is a terminal.
+
+`-q, --quiet`
+
+Print nothing but errors.
+
+`-v, --verbose`
+
+Print more. The opposite of `--quiet`. The last one wins.
+
+`-h, --help`
+
+Print this summary and exit. Nothing else will be done.
 
 
-## Building
+## Building CX
 
 In order to build `cx` just run `./build` script in the source directory. It's a one-liner bash script that
 will do a bootstrapping build of `cx` (without help from `make` and such), and copy the
@@ -69,6 +94,8 @@ A unit may use other units. The rule is simple: if unit A #includes something fr
 Unit A may include headers from unit B relative to the common path of A and B.
 
 E.g. `src/foo/a/something.cpp` may include `src/foo/b/header.h` as `#include "b/header.h"`. In other words, you can drop leading `../` path elements. This should not require any configuration. Alternatively, you can use `include_path` in `cx.unit` or `cx.top`.
+
+## Build configuration
 
 ### Unit configiration
 
@@ -108,7 +135,46 @@ ar: /usr/bin/gcc-ar-7
 nm: /usr/bin/gcc-nm-7
 
 ```
-Those are exact names by which compiler etc. will be invoked. Note, only GCC is currently supported, and whatever program is specified as, e.g., `g++` must behave exactly as `g++` does.
+Those are exact names by which compiler etc. will be invoked. Note, only "GCC-like" toolchains are currently supported, and whatever program is specified as, e.g., `g++` must behave exactly as `g++` does. E.g. `g++: /usr/bin/clang++`, etc. should work.
+
+### Multiple configurations
+
+Both `cx.top` and `cx.unit` may have sections for different build configurations.
+A configuration has a name, and it may specify compiler versions, compiler options, external libraries, etc., specific to that configuration.
+
+```
+cc_options: -O2
+cc_options: -Dfoo=bar
+
+[release]
+cc_options: -O3
+cc_options: -DNDEBUG -D__RELEASE
+
+[debug]
+cc_options: -O0 -g -D__DEBUG
+
+[*]
+cc_options: -Dbar=baz
+```
+
+In this example first two `cc_options` items apply to *all* configurations. The next are only for configuration `release` (no special meaning, just a name). Next is for configuration `debug`. The last one is again for *all* configurations.
+
+Section `[*]` means all configurations. It is implied at the beginning of `cx.top`/`cx.unit` file before an explicit configuration is specified.
+
+You can select a configuaration in the command line:
+```
+cx -b --config=gcc-4.8-release my_prog
+```
+or by setting environment variable `CX_CONFIG`:
+```
+CX_CONFIG=gcc-4.8-release cx -b my_prog
+```
+Or
+```
+export CX_CONFIG=gcc-4.8-release
+cx -b my_prog
+```
 
 ## Limitations
 
+* For now only GCC and Linux are supported.
