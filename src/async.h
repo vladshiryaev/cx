@@ -27,6 +27,8 @@ public:
     void send(/*new*/ Job*);
     Job* receive(); /*delete*/
 
+    void discard(); // Wait for jobs, delete them.
+
 private:
     friend void worker();
     class Impl;

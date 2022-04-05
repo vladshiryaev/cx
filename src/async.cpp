@@ -29,9 +29,7 @@ public:
         producerCount++;
     }
     ~Impl() {
-        while (Job* job = receive()) {
-            delete job;
-        }
+        discard();
         std::unique_lock<std::mutex> lock(mutex);
         // Last work producer, stop worker threads.
         if (--producerCount == 0) {
@@ -82,6 +80,11 @@ public:
         doneJobs.pop();
         return job;
     }
+    void discard() {
+        while (Job* job = receive()) {
+            delete job;
+        }
+    }
     Batch* batch = nullptr;
     int sentCount = 0;
     int receivedCount = 0;
@@ -94,6 +97,7 @@ Batch::Batch(): impl(new Batch::Impl(this)) {}
 Batch::~Batch() { delete impl; }
 void Batch::send(Job* job) { impl->send(job); }
 Job* Batch::receive() { return impl->receive(); }
+void Batch::discard() { return impl->discard(); }
 
 
 void worker() {

@@ -42,6 +42,7 @@ function run_all() {
     run cpp_args OK
     CX_CONFIG=release run config_1/progs/prog1 release
     CX_CONFIG=debug   run config_1/progs/prog1 debug
+    run big
 
     expect_failure c_missing_header
     expect_failure invalid_opt_1

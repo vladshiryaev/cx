@@ -57,6 +57,7 @@ struct LibraryJob: public BuilderJob {
 
 
 Builder::~Builder() {
+    batch.discard();
     if (master == this) {
         delete compiler;
         delete profile;
