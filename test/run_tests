@@ -32,6 +32,7 @@ function run_all() {
     run c_math
     run c_socket
     run c_2_programs/main1.c
+    run c_2_programs/main2.c
     run c_cpp_mix
     run cpp_threads
     run cpp_z

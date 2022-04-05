@@ -2,10 +2,10 @@
 #undef NDEBUG
 #endif
 
-#include <cassert> 
-#include <cstring> 
-#include <cstdlib> 
-#include <cstdio> 
+#include <cassert>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
 
 #include "output.h"
 #include "dirs.h"
@@ -159,7 +159,7 @@ void testFileType() {
 
 
 void testConfig() {
-    const char* text = 
+    const char* text =
         "# Comment\n"
         "c_options:-O2 -Df=\" \" \\\n-O3\n"  // Escaped end of line, so continues.
         "cxx_options: \"-Df= \" -Df='\" \"'  -Df=\"' '\"#Tail comment\n"
@@ -203,26 +203,24 @@ struct IncJob: public Job {
 
 void testBatch() {
     {
-        Batch batch; 
-        for (int j = 0; j < 3; j++) {
+        Batch batch;
+        for (int j = 0; j < 2; j++) {
             for (int i = 0; i < jobCount; i++) {
-                batch.add(new IncJob());
+                batch.send(new IncJob());
             }
-            batch.run();
-            assert(batch.getCount() == jobCount);
-            assert(jobInstanceCount == jobCount);
-            for (int i = 0; i < jobCount; i++) {
-                IncJob* job = (IncJob*)batch.get(i);
-                assert(job->done);
+            for (;;) {
+                IncJob* job = (IncJob*)(batch.receive());
+                if (!job) {
+                    break;
+                }
                 assert(job->count == 10);
+                delete job;
             }
-            batch.clear();
-            assert(batch.getCount() == 0);
-            assert(jobInstanceCount == 0);
         }
+        // Make sure abandoned (not receive()d) jobs are deleted anyway.
         Batch batch2;
         for (int i = 0; i < 2; i++) {
-            batch.add(new IncJob());
+            batch.send(new IncJob());
         }
     }
     assert(jobInstanceCount == 0);
@@ -233,7 +231,7 @@ void testBatch() {
     say(logLevelInfo, "Testing %s", #WHAT); \
     WHAT(); \
 } while (0)
-  
+
 void test() {
     RUN(testDirFunc);
     RUN(testStringList);

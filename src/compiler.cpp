@@ -329,10 +329,10 @@ bool GccCompiler::containsMain(const Config& config, const char* objPath) {
 }
 
 
-bool GccCompiler::link(const Config& config, const char* execPath, const FileStateList& objList, const FileStateList& libList) {
+bool GccCompiler::link(const Config& config, const char* execPath, const StringList& objList, const StringList& libList) {
     char absExecPath[maxPath];
     INFO("%s", rebasePath(config.path, execPath, absExecPath));
-    Runner runner; 
+    Runner runner;
     runner.currentDirectory = config.path;
     runner.args.add(profile.linker);
     runner.args.add(colorOption());
@@ -342,12 +342,12 @@ bool GccCompiler::link(const Config& config, const char* execPath, const FileSta
     }
     runner.args.add("-o");
     runner.args.add(execPath);
-    for (FileStateList::Iterator i(objList); i; i.next()) {
+    for (StringList::Iterator i(objList); i; i.next()) {
         runner.args.add(i->string, i->length);
     }
     if (!libList.isEmpty()) {
         runner.args.add("-Wl,--start-group");
-        for (FileStateList::Iterator i(libList); i; i.next()) {
+        for (StringList::Iterator i(libList); i; i.next()) {
             runner.args.add(i->string, i->length);
         }
         runner.args.add("-Wl,--end-group");
@@ -366,16 +366,16 @@ bool GccCompiler::link(const Config& config, const char* execPath, const FileSta
 }
 
 
-bool GccCompiler::makeLibrary(const Config& config, const char* libPath, const FileStateList& objList) {
+bool GccCompiler::makeLibrary(const Config& config, const char* libPath, const StringList& objList) {
     char absLibPath[maxPath];
     INFO("%s", rebasePath(config.path, libPath, absLibPath));
     deleteFile(absLibPath);
-    Runner runner; 
+    Runner runner;
     runner.currentDirectory = config.path;
     runner.args.add(profile.librarian);
     runner.args.add("crs");
     runner.args.add(libPath);
-    for (FileStateList::Iterator i(objList); i; i.next()) {
+    for (StringList::Iterator i(objList); i; i.next()) {
         runner.args.add(i->string, i->length);
     }
     if (runner.run()) {
