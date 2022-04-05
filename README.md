@@ -135,7 +135,19 @@ ar: /usr/bin/gcc-ar-7
 nm: /usr/bin/gcc-nm-7
 
 ```
-Those are exact names by which compiler etc. will be invoked. Note, only "GCC-like" toolchains are currently supported, and whatever program is specified as, e.g., `g++` must behave exactly as `g++` does. E.g. `g++: /usr/bin/clang++`, etc. should work.
+Those are exact names by which compiler etc. will be invoked. Note, only "GCC-like" toolchains are currently supported, and whatever program is specified as, e.g., `g++` must behave exactly as `g++` does.
+Clang will work. Just add this to your `cx.top`:
+```
+gcc: clang
+g++: clang++
+```
+Or, if you want to make it a named congiguration (see below):
+
+```
+[clang]
+gcc: clang
+g++: clang++
+```
 
 ### Multiple configurations
 

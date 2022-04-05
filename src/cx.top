@@ -1,0 +1,6 @@
+cxx_options: -O3 -fno-rtti -fno-exceptions
+
+[clang]
+gcc: clang
+g++: clang++
+

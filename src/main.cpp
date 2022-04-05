@@ -1,7 +1,6 @@
 #include <cstdio> 
 #include <cstring> 
 
-#include "compiler.h"
 #include "builder.h"
 #include "lists.h"
 #include "dirs.h"

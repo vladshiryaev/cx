@@ -59,7 +59,7 @@ public:
     void send(Job* job) {
         std::unique_lock<std::mutex> lock(mutex);
         if (workers.empty()) {
-            // Start lazily, of first request.
+            // Start lazily, on first request.
             // Stop when last work producer dies.
             TRACE("Starting %d threads", maxThreads);
             while (int(workers.size()) < maxThreads) {

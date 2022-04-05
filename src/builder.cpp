@@ -22,7 +22,7 @@ struct BuilderJob: public Job {
 };
 
 
-// Souce checking/compilation in the context of unit builder.
+// Source checking/compilation in the context of parent unit builder.
 struct CompileJob: public BuilderJob {
     Builder& builder;
     const char* name;
@@ -44,7 +44,7 @@ struct CompileJob: public BuilderJob {
 };
 
 
-// Library making (once compilation/checking is done) in a new dedicated unit Builder.
+// Library making (once compilation is done) in a new dedicated unit Builder.
 struct LibraryJob: public BuilderJob {
     Builder builder;
     LibraryJob() {

@@ -39,7 +39,7 @@ public:
     GccCompiler(Profile&);
     bool compile(const Config&, const char* sourcePath, Dependencies&) override;
     bool link(const Config&, const char* exec, const StringList& objList, const StringList& libList) override;
-    bool makeLibrary(const Config&, const char* name, const StringList& objList);
+    bool makeLibrary(const Config&, const char* name, const StringList& objList) override;
     bool containsMain(const Config&, const char* objPath) override;
 protected:
     bool convertGccDeps(const char*, const char*, const char*, bool, uint32_t, Dependencies&);

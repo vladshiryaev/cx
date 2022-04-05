@@ -111,19 +111,19 @@ Compiler::~Compiler() {}
 GccCompiler::GccCompiler(Profile& p): Compiler(p) {
     Runner runner;
     runner.args.add(profile.c);
-    runner.args.add("-dumpfullversion");
+    runner.args.add("--version");
     if (runner.run() && runner.exitStatus == 0 && !runner.output.isEmpty()) {
         StringList::Iterator i(runner.output);
         if (i->length + 1 <= sizeof(profile.version)) {
             memcpy(profile.version, i->string, i->length + 1);
-            TRACE("gcc %s", profile.version);
+            TRACE("%s", profile.version);
             uint32_t versionHash = hash(i->string, i->length);
             profile.init();
             profile.tag += versionHash;
             return;
         }
     }
-    PANIC("Cannot run %s", profile.c);
+    PANIC("Cannot run %s --version", profile.c);
 }
 
 

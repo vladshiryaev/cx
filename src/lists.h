@@ -181,7 +181,7 @@ public:
 };
 
 
-// Strings with 64-bit tags.
+// Strings (file paths) with 64-bit tags.
 
 struct __attribute__((__packed__)) FileStateListEntry {
     static constexpr int alignment = 8;
@@ -192,8 +192,6 @@ struct __attribute__((__packed__)) FileStateListEntry {
     char string[];
 };
 
-
-// File paths with tags.
 
 class FileStateList: public StringContainerBase<FileStateListEntry> {
 public:
